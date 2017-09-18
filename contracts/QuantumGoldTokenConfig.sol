@@ -18,7 +18,6 @@ contract QuantumGoldTokenConfig {
     string public constant NAME = "Quantum Gold Token";
     uint8 public constant DECIMALS = 18;
 
-
     // ------------------------------------------------------------------------
     // Decimal factor for multiplications from QTG unit to QTG natural unit
     // ------------------------------------------------------------------------
@@ -27,9 +26,9 @@ contract QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     // Tranche 1 soft cap and hard cap, and total tokens
     // ------------------------------------------------------------------------
-    uint public constant TOKENS_SOFT_CAP = 13000000 * DECIMALSFACTOR;
-    uint public constant TOKENS_HARD_CAP = 30000000 * DECIMALSFACTOR;
-    uint public constant TOKENS_TOTAL = 250000000 * DECIMALSFACTOR;
+    uint public constant TOKENS_SOFT_CAP = 20000000 * DECIMALSFACTOR;
+    uint public constant TOKENS_HARD_CAP = 40000000 * DECIMALSFACTOR;
+    uint public constant TOKENS_TOTAL = 200000000 * DECIMALSFACTOR;
 
     // ------------------------------------------------------------------------
     // Tranche 1 token sale start date and end date
@@ -57,5 +56,5 @@ contract QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     // Tokens for sale 2 in the following account
     // ------------------------------------------------------------------------
-    address public TRANCHE2_ACCOUNT = 0x0b68253abB37e900cfE8738fa25bFC51B243D10F;
+    address public WALLET_ACCOUNT = 0x0b68253abB37e900cfE8738fa25bFC51B243D10F;
 }

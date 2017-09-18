@@ -11,7 +11,7 @@ contract QuantumGoldTokenFactory {
 
     function QuantumGoldTokenFactory() {
       //upon creation of the factory, deploy a QuantumGoldToken (parameters are meaningless) and store the bytecode provably.
-      address quantumGoldToken = createQuantumGoldToken(10000, "Quantum Gold Token", 3, "QTG");
+      address quantumGoldToken = createQuantumGoldToken(200000000, "Quantum Gold Token", 18, "QTG");
       quantumGoldByteCode = codeAt(quantumGoldToken);
     }
 

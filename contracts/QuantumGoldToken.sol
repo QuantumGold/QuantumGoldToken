@@ -12,10 +12,14 @@ Machine-based, rapid creation of many tokens would not necessarily need these ex
 .*/
 
 import "./StandardToken.sol";
+import "./SafeMath.sol";
+import "./QuantumGoldTokenConfig.sol";
+import "./Owned.sol";
 
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
-contract QuantumGoldToken is StandardToken {
+contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
+    using SafeMath for uint;
 
     /* Public variables of the token */
 
@@ -25,10 +29,15 @@ contract QuantumGoldToken is StandardToken {
     They allow one to customise the token contract & in no way influences the core functionality.
     Some wallets/interfaces might not even bother to look at this information.
     */
-    string public name;                   //fancy name: eg Simon Bucks
-    uint8 public decimals;                //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
-    string public symbol;                 //An identifier: eg SBX
-    string public version = 'H0.1';       //human 0.1 standard. Just an arbitrary versioning scheme.
+    string public name;                  //fancy name: eg Simon Bucks
+    uint8 public decimals;                                 //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
+    string public symbol;                               //An identifier: eg SBX
+    uint256 public totalSupply;
+    address public wallet;
+
+    string public version = 'H0.1';                             //human 0.1 standard. Just an arbitrary versioning scheme.
+    uint public tokensPerKEther = 2000000;
+    bool public finalised = false;
 
     function QuantumGoldToken(
         uint256 _initialAmount,
@@ -41,6 +50,7 @@ contract QuantumGoldToken is StandardToken {
         name = _tokenName;                                   // Set the name for display purposes
         decimals = _decimalUnits;                            // Amount of decimals for display purposes
         symbol = _tokenSymbol;                               // Set the symbol for display purposes
+        wallet = WALLET_ACCOUNT;
     }
 
     /* Approves and then calls the receiving contract */
@@ -54,4 +64,114 @@ contract QuantumGoldToken is StandardToken {
         require(_spender.call(bytes4(bytes32(sha3("receiveApproval(address,uint256,address,bytes)"))), msg.sender, _value, this, _extraData));
         return true;
     }
+
+
+    // ------------------------------------------------------------------------
+    // Accept ethers to buy tokens during the crowdsale
+    // ------------------------------------------------------------------------
+    function () payable {
+        proxyPayment(msg.sender);
+    }
+
+    // ------------------------------------------------------------------------
+    // Accept ethers from one account for tokens to be created for another
+    // account. Can be used by exchanges to purchase tokens on behalf of
+    // it's user
+    // ------------------------------------------------------------------------
+    function proxyPayment(address participant) payable {
+        // No contributions after the crowdsale is finalised
+        require(!finalised);
+
+        // No contributions before the start of the crowdsale
+        require(now >= START_DATE);
+        // No contributions after the end of the crowdsale
+        require(now <= END_DATE);
+
+        // No contributions below the minimum (can be 0 ETH)
+        require(msg.value >= CONTRIBUTIONS_MIN);
+        // No contributions above a maximum (if maximum is set to non-0)
+        require(CONTRIBUTIONS_MAX == 0 || msg.value < CONTRIBUTIONS_MAX);
+
+        // Calculate number of tokens for contributed ETH
+        // `18` is the ETH decimals
+        // `- decimals` is the token decimals
+        // `+ 3` for the tokens per 1,000 ETH factor
+        uint tokens = msg.value * tokensPerKEther / 10**uint(18 - decimals + 3);
+
+        // Check if the hard cap will be exceeded
+        require(totalSupply + tokens <= TOKENS_HARD_CAP);
+
+        // Add tokens purchased to account's balance and total supply
+        balances[participant] = balances[participant].add(tokens);
+        totalSupply = totalSupply.add(tokens);
+
+        // Log the tokens purchased
+        Transfer(0x0, participant, tokens);
+        TokensBought(participant, msg.value, this.balance, tokens,
+             totalSupply, tokensPerKEther);
+
+        // Transfer the contributed ethers to the crowdsale wallet
+        //if (!wallet.send(msg.value)) throw;
+        msg.sender.transfer(msg.value);
+    }
+    event TokensBought(address indexed buyer, uint ethers,
+        uint newEtherBalance, uint tokens, uint newTotalSupply,
+        uint _tokensPerKEther);
+
+
+    // ------------------------------------------------------------------------
+    // Quantum Gold Foundation to finalise the crowdsale - to adding the locked tokens to
+    // this contract and the total supply
+    // ------------------------------------------------------------------------
+    function finalise() onlyOwner {
+        // Can only finalise if raised > soft cap or after the end date
+        require(totalSupply >= TOKENS_SOFT_CAP || now > END_DATE);
+
+        // Can only finalise once
+        require(!finalised);
+
+        // Total tokens to be created
+        uint remainingTokens = TOKENS_TOTAL;
+        // Minus precommitments and public crowdsale tokens
+        remainingTokens = remainingTokens.sub(totalSupply);
+
+        // Add tokens purchased to account's balance and total supply
+        balances[WALLET_ACCOUNT] = balances[WALLET_ACCOUNT].add(remainingTokens);
+        totalSupply = totalSupply.add(remainingTokens);
+
+        // Can only finalise once
+        finalised = true;
+        WALLET_ACCOUNT.transfer(remainingTokens);
+    }
+
+    // ------------------------------------------------------------------------
+    // Quantum Gold Foundation to add precommitment funding token balance before the crowdsale
+    // commences
+    // ------------------------------------------------------------------------
+    function addPrecommitment(address participant, uint balance) onlyOwner {
+        require(balance > 0);
+        balances[participant] = balances[participant].add(balance);
+        totalSupply = totalSupply.add(balance);
+        Transfer(0x0, participant, balance);
+    }
+
+        // ------------------------------------------------------------------------
+    // Quantum Gold Foundation can set number of tokens per 1,000 ETH
+    // Can only be set before the start of the crowdsale
+    // ------------------------------------------------------------------------
+    function setTokensPerKEther(uint _tokensPerKEther) onlyOwner {
+        require(now < START_DATE);
+        require(_tokensPerKEther > 0);
+        tokensPerKEther = _tokensPerKEther;
+        TokensPerKEtherUpdated(tokensPerKEther);
+    }
+    event TokensPerKEtherUpdated(uint _tokensPerKEther);
+
+    /*function setWallet(address _wallet) onlyOwner {
+        wallet = _wallet;
+        WalletUpdated(wallet);
+    }
+    event WalletUpdated(address newWallet);*/
+
+
 }
