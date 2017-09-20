@@ -45,14 +45,20 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // Indicative rate of ETH per token of 0.002
     //
     // This is the same as 1 / 0.002 = 500 QTG per ETH
+    //
+    // Discounted Price:
     // 1st Week Price = 1 / 0.0016 = 625 QTG per ETH, tokensPerKEther = 625,000
     // 2nd Week Price = 1 / 0.0018 = 555.555556 QTG per ETH, tokensPerKEther = 555,556
     // 3rd Week Price = 1 / 0.0019 = 526.315789 QTG per ETH, tokensPerKEther = 526,316
     // After 3rd Week Price = 1 / 0.002 = 500 QTG per ETH, tokensPerKEther = 500,000
     //
+    // Regular Price:
     // tokensPerEther  = 500
     // tokensPerKEther = 500
     // tokensPerKEther = 500,000 rounded to an uint, six significant figures
+    //
+    // *All the ETH and QTG should be call with (integer value + Decimal factor),
+    //  i.e. Total Supply call should be 200,000,000,000,000,000,000,000,000
     // ------------------------------------------------------------------------
     uint public tokensPerKEther = 500000;
 
