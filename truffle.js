@@ -23,15 +23,17 @@ engine.start(); // Required by the provider engine.
 
 module.exports = {
   networks: {
-    "ropsten": {
+    ropsten: {
       network_id: 3,    // Official ropsten network id
-      provider: engine, // Use our custom provider
-      from: address     // Use the address we derived
-    },
-    development: {
       host: 'localhost',
       port: 8545,
-      network_id: '*' // Match any network id
+    },
+    development: {
+      network_id: '*',
+      host: 'localhost',
+      port: 8545,
+      gas:   2900000
+
     }
   },
   rpc: {

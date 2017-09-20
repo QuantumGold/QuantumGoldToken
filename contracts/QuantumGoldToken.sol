@@ -36,21 +36,39 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     address public wallet;
 
     string public version = 'H0.1';                             //human 0.1 standard. Just an arbitrary versioning scheme.
-    uint public tokensPerKEther = 2000000;
     bool public finalised = false;
+    bool public lucky = false;
+
+    // ------------------------------------------------------------------------
+    // Number of tokens per 1,000 ETH
+    //
+    // Indicative rate of ETH per token of 0.002
+    //
+    // This is the same as 1 / 0.002 = 500 QTG per ETH
+    // 1st Week Price = 1 / 0.0016 = 625 QTG per ETH, tokensPerKEther = 625,000
+    // 2nd Week Price = 1 / 0.0018 = 555.555556 QTG per ETH, tokensPerKEther = 555,556
+    // 3rd Week Price = 1 / 0.0019 = 526.315789 QTG per ETH, tokensPerKEther = 526,316
+    // After 3rd Week Price = 1 / 0.002 = 500 QTG per ETH, tokensPerKEther = 500,000
+    //
+    // tokensPerEther  = 500
+    // tokensPerKEther = 500
+    // tokensPerKEther = 500,000 rounded to an uint, six significant figures
+    // ------------------------------------------------------------------------
+    uint public tokensPerKEther = 500000;
 
     function QuantumGoldToken(
         uint256 _initialAmount,
         string _tokenName,
         uint8 _decimalUnits,
-        string _tokenSymbol
+        string _tokenSymbol,
+        address _wallet
         ) {
         balances[msg.sender] = _initialAmount;               // Give the creator all initial tokens
         totalSupply = _initialAmount;                        // Update total supply
         name = _tokenName;                                   // Set the name for display purposes
         decimals = _decimalUnits;                            // Amount of decimals for display purposes
         symbol = _tokenSymbol;                               // Set the symbol for display purposes
-        wallet = WALLET_ACCOUNT;
+        wallet = _wallet;
     }
 
     /* Approves and then calls the receiving contract */
@@ -70,8 +88,10 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // Accept ethers to buy tokens during the crowdsale
     // ------------------------------------------------------------------------
     function () payable {
-        proxyPayment(msg.sender);
+      EtherReceived(msg.value);
+      proxyPayment(msg.sender);
     }
+    event EtherReceived(uint ethers);
 
     // ------------------------------------------------------------------------
     // Accept ethers from one account for tokens to be created for another
@@ -83,9 +103,9 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         require(!finalised);
 
         // No contributions before the start of the crowdsale
-        require(now >= START_DATE);
+        //require(now >= START_DATE);
         // No contributions after the end of the crowdsale
-        require(now <= END_DATE);
+        //require(now <= END_DATE);
 
         // No contributions below the minimum (can be 0 ETH)
         require(msg.value >= CONTRIBUTIONS_MIN);
@@ -112,7 +132,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
 
         // Transfer the contributed ethers to the crowdsale wallet
         //if (!wallet.send(msg.value)) throw;
-        msg.sender.transfer(msg.value);
+        wallet.transfer(msg.value);
     }
     event TokensBought(address indexed buyer, uint ethers,
         uint newEtherBalance, uint tokens, uint newTotalSupply,
@@ -125,7 +145,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     function finalise() onlyOwner {
         // Can only finalise if raised > soft cap or after the end date
-        require(totalSupply >= TOKENS_SOFT_CAP || now > END_DATE);
+        //require(totalSupply >= TOKENS_SOFT_CAP || now > END_DATE);
 
         // Can only finalise once
         require(!finalised);
@@ -136,12 +156,11 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         remainingTokens = remainingTokens.sub(totalSupply);
 
         // Add tokens purchased to account's balance and total supply
-        balances[WALLET_ACCOUNT] = balances[WALLET_ACCOUNT].add(remainingTokens);
+        balances[wallet] = balances[wallet].add(remainingTokens);
         totalSupply = totalSupply.add(remainingTokens);
 
         // Can only finalise once
         finalised = true;
-        WALLET_ACCOUNT.transfer(remainingTokens);
     }
 
     // ------------------------------------------------------------------------
@@ -155,12 +174,11 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         Transfer(0x0, participant, balance);
     }
 
-        // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Quantum Gold Foundation can set number of tokens per 1,000 ETH
     // Can only be set before the start of the crowdsale
     // ------------------------------------------------------------------------
     function setTokensPerKEther(uint _tokensPerKEther) onlyOwner {
-        require(now < START_DATE);
         require(_tokensPerKEther > 0);
         tokensPerKEther = _tokensPerKEther;
         TokensPerKEtherUpdated(tokensPerKEther);

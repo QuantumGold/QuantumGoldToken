@@ -53,8 +53,4 @@ contract QuantumGoldTokenConfig {
     uint public CONTRIBUTIONS_MIN = 0 ether;
     uint public CONTRIBUTIONS_MAX = 0 ether;
 
-    // ------------------------------------------------------------------------
-    // Tokens for sale 2 in the following account
-    // ------------------------------------------------------------------------
-    address public WALLET_ACCOUNT = 0x0b68253abB37e900cfE8738fa25bFC51B243D10F;
 }

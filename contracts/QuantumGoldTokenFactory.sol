@@ -1,7 +1,6 @@
-
 import "./QuantumGoldToken.sol";
 
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.8;
 
 contract QuantumGoldTokenFactory {
 
@@ -11,11 +10,11 @@ contract QuantumGoldTokenFactory {
 
     function QuantumGoldTokenFactory() {
       //upon creation of the factory, deploy a QuantumGoldToken (parameters are meaningless) and store the bytecode provably.
-      address quantumGoldToken = createQuantumGoldToken(200000000, "Quantum Gold Token", 18, "QTG");
-      quantumGoldByteCode = codeAt(quantumGoldToken);
+      //address verifyToken = createQuantumGoldToken(0, "Verify Token", 3, "VFT");
+      //quantumGoldByteCode = codeAt(quantumGoldToken);
     }
 
-    //verifies if a contract that has been deployed is a Quantum Gold Token.
+    //verifies if a contract that has been deployed is a Human Standard Token.
     //NOTE: This is a very expensive function, and should only be used in an eth_call. ~800k gas
     function verifyQuantumGoldToken(address _tokenContract) constant returns (bool) {
       bytes memory fetchedTokenByteCode = codeAt(_tokenContract);
@@ -52,9 +51,9 @@ contract QuantumGoldTokenFactory {
       }
     }
 
-    function createQuantumGoldToken(uint256 _initialAmount, string _name, uint8 _decimals, string _symbol) returns (address) {
+    function createQuantumGoldToken(uint256 _initialAmount, string _name, uint8 _decimals, string _symbol, address _wallet) returns (address) {
 
-        QuantumGoldToken newToken = (new QuantumGoldToken(_initialAmount, _name, _decimals, _symbol));
+        QuantumGoldToken newToken = (new QuantumGoldToken(_initialAmount, _name, _decimals, _symbol, _wallet));
         created[msg.sender].push(address(newToken));
         isQuantumGoldToken[address(newToken)] = true;
         newToken.transfer(msg.sender, _initialAmount); //the factory will own the created tokens. You must transfer them.
