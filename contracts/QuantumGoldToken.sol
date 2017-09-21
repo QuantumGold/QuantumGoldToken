@@ -61,12 +61,18 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     uint public tokensPerKEther = 500000;
 
+    // ------------------------------------------------------------------------
+    // Founders reward will be locked for 1 year and 2 year
+    // ------------------------------------------------------------------------
+    mapping(address => bool) public isLocked1Y;
+    mapping(address => bool) public isLocked2Y;
+
     function QuantumGoldToken(
         address _wallet
         ) {
         wallet = _wallet;
     }
-    
+
     /* Approves and then calls the receiving contract */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
         allowed[msg.sender][_spender] = _value;
@@ -167,6 +173,39 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         Transfer(0x0, participant, balance);
     }
 
+    function addPrecommitment1YLocked(address participant, uint balance) onlyOwner {
+        require(balance > 0);
+        balances[participant] = balances[participant].add(balance);
+        totalSupply = totalSupply.add(balance);
+        isLocked1Y[participant] = true;
+        Transfer(0x0, participant, balance);
+    }
+
+    function addPrecommitment2YLocked(address participant, uint balance) onlyOwner {
+        require(balance > 0);
+        balances[participant] = balances[participant].add(balance);
+        totalSupply = totalSupply.add(balance);
+        isLocked2Y[participant] = true;
+        Transfer(0x0, participant, balance);
+    }
+
+    // ------------------------------------------------------------------------
+    // An account can unlock their 1y locked tokens 1y after token launch date
+    // ------------------------------------------------------------------------
+    function unlock1Y(address participant) {
+        require(now >= LOCKED_1Y_DATE);
+        isLocked1Y[participant] = false;
+    }
+
+    // ------------------------------------------------------------------------
+    // An account can unlock their 2y locked tokens 2y after token launch date
+    // ------------------------------------------------------------------------
+    function unlock2Y(address participant) {
+        require(now >= LOCKED_2Y_DATE);
+        isLocked2Y[participant] = false;
+    }
+
+
     // ------------------------------------------------------------------------
     // Quantum Gold Foundation can set number of tokens per 1,000 ETH
     // Can only be set before the start of the crowdsale
@@ -184,5 +223,32 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     }
     event WalletUpdated(address newWallet);
 
+    modifier canTransfer(address _from) {
+      // Cannot transfer before crowdsale ends
+      //require(finalised);
+      // Cannot transfer if it is locked 1Y
+      require(!isLocked1Y[_from]);
+      // Cannot transfer if it is locked 2Y
+      require(!isLocked2Y[_from]);
+       _;
+    }
+    // ------------------------------------------------------------------------
+    // Transfer the balance from owner's account to another account
+    // Override standard token function
+    // ------------------------------------------------------------------------
+    function transfer(address _to, uint _amount) canTransfer(msg.sender) returns (bool success) {
+        // Standard transfer
+        return super.transfer(_to, _amount);
+    }
 
+    // ------------------------------------------------------------------------
+    // Spender of tokens transfer an amount of tokens from the token owner's
+    // balance to another account
+    // ------------------------------------------------------------------------
+    function transferFrom(address _from, address _to, uint _amount) canTransfer(_from)
+        returns (bool success)
+    {
+        // Standard transferFrom
+        return super.transferFrom(_from, _to, _amount);
+    }
 }

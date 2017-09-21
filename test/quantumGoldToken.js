@@ -100,7 +100,7 @@ contract('QuantumGoldToken', function (accounts) {
     let SRS = await SampleRecipientThrow.new({from: accounts[0]})
     return expectThrow(QTG.approveAndCall.call(SRS.address, 100, '0x42', {from: accounts[0]}))
   })
-  
+
   // bit overkill. But is for testing a bug
   it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', async () => {
     await QTG.addPrecommitment(accounts[0], 10000)
@@ -226,6 +226,45 @@ contract('QuantumGoldToken', function (accounts) {
     assert.strictEqual(totalSupply.toNumber(), 1000000000000000000)
     assert.strictEqual(balanceOfInvestor.toNumber(), 1000000000000000000)
   })
+
+  it('addPrecommitment1YLocked: should transfer token to contributor but not transferrable', async() => {
+    await QTG.addPrecommitment1YLocked(accounts[3], 100e18)
+    const totalSupply = await QTG.totalSupply.call()
+    const balanceOfInvestor = await QTG.balanceOf.call(accounts[3])
+    assert.strictEqual(totalSupply.toNumber(), 100e18)
+    assert.strictEqual(balanceOfInvestor.toNumber(), 100e18)
+    await expectThrow(QTG.transfer(accounts[4], 10000, {from: accounts[3]}))
+  })
+
+  it('addPrecommitment2YLocked: should transfer token to contributor but not transferrable', async() => {
+    await QTG.addPrecommitment2YLocked(accounts[2], 100e18)
+    const totalSupply = await QTG.totalSupply.call()
+    const balanceOfInvestor = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(totalSupply.toNumber(), 100e18)
+    assert.strictEqual(balanceOfInvestor.toNumber(), 100e18)
+    await expectThrow(QTG.transfer(accounts[5], 10000, {from: accounts[2]}))
+  })
+
+  // **manipulate the time to 1Y/2Y unlock this test case
+  // it('addPrecommitment1YLocked: should transfer token to contributor but not transferrable', async() => {
+  //   await QTG.addPrecommitment1YLocked(accounts[3], 100e18)
+  //   const totalSupply = await QTG.totalSupply.call()
+  //   const balanceOfInvestor = await QTG.balanceOf.call(accounts[3])
+  //   assert.strictEqual(totalSupply.toNumber(), 100e18)
+  //   assert.strictEqual(balanceOfInvestor.toNumber(), 100e18)
+  //   await QTG.unlock1Y(accounts[3])
+  //   await QTG.transfer(accounts[4], 10000, {from: accounts[3]})
+  // })
+  //
+  // it('addPrecommitment2YLocked: should transfer token to contributor but not transferrable', async() => {
+  //   await QTG.addPrecommitment2YLocked(accounts[2], 123e18)
+  //   const totalSupply = await QTG.totalSupply.call()
+  //   const balanceOfInvestor = await QTG.balanceOf.call(accounts[2])
+  //   assert.strictEqual(totalSupply.toNumber(), 123e18)
+  //   assert.strictEqual(balanceOfInvestor.toNumber(), 123e18)
+  //   await QTG.unlock2Y(accounts[2])
+  //   await QTG.transfer(accounts[5], 56432, {from: accounts[2]})
+  // })
 
   it('payable: should pay 0 ETH to contract and get back 0 token', async() => {
     const balanceBefore = await QTG.balanceOf.call(accounts[1])
