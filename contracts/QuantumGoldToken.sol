@@ -29,15 +29,14 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     They allow one to customise the token contract & in no way influences the core functionality.
     Some wallets/interfaces might not even bother to look at this information.
     */
-    string public name;                  //fancy name: eg Simon Bucks
-    uint8 public decimals;                                 //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
-    string public symbol;                               //An identifier: eg SBX
-    uint256 public totalSupply;
+    string public name = _NAME;                  //fancy name: eg Simon Bucks
+    uint8 public decimals = _DECIMALS;                                 //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
+    string public symbol = _SYMBOL;                               //An identifier: eg SBX
     address public wallet;
 
+    uint256 public totalSupply = 0;
     string public version = 'H0.1';                             //human 0.1 standard. Just an arbitrary versioning scheme.
     bool public finalised = false;
-    bool public lucky = false;
 
     // ------------------------------------------------------------------------
     // Number of tokens per 1,000 ETH
@@ -57,20 +56,11 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     uint public tokensPerKEther = 500000;
 
     function QuantumGoldToken(
-        uint256 _initialAmount,
-        string _tokenName,
-        uint8 _decimalUnits,
-        string _tokenSymbol,
         address _wallet
         ) {
-        balances[msg.sender] = _initialAmount;               // Give the creator all initial tokens
-        totalSupply = _initialAmount;                        // Update total supply
-        name = _tokenName;                                   // Set the name for display purposes
-        decimals = _decimalUnits;                            // Amount of decimals for display purposes
-        symbol = _tokenSymbol;                               // Set the symbol for display purposes
         wallet = _wallet;
     }
-
+    
     /* Approves and then calls the receiving contract */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
         allowed[msg.sender][_spender] = _value;
@@ -83,15 +73,12 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         return true;
     }
 
-
     // ------------------------------------------------------------------------
     // Accept ethers to buy tokens during the crowdsale
     // ------------------------------------------------------------------------
     function () payable {
-      EtherReceived(msg.value);
       proxyPayment(msg.sender);
     }
-    event EtherReceived(uint ethers);
 
     // ------------------------------------------------------------------------
     // Accept ethers from one account for tokens to be created for another
@@ -103,9 +90,9 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         require(!finalised);
 
         // No contributions before the start of the crowdsale
-        //require(now >= START_DATE);
+        require(now >= START_DATE);
         // No contributions after the end of the crowdsale
-        //require(now <= END_DATE);
+        require(now <= END_DATE);
 
         // No contributions below the minimum (can be 0 ETH)
         require(msg.value >= CONTRIBUTIONS_MIN);
@@ -185,11 +172,11 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     }
     event TokensPerKEtherUpdated(uint _tokensPerKEther);
 
-    /*function setWallet(address _wallet) onlyOwner {
+    function setWallet(address _wallet) onlyOwner {
         wallet = _wallet;
         WalletUpdated(wallet);
     }
-    event WalletUpdated(address newWallet);*/
+    event WalletUpdated(address newWallet);
 
 
 }

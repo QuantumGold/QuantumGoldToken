@@ -25,14 +25,16 @@ module.exports = {
   networks: {
     ropsten: {
       network_id: 3,    // Official ropsten network id
-      host: 'localhost',
+      host: '128.199.120.45',
       port: 8545,
+      gas: 4712388,
+      gasPirce: 200000000000,
+      from: '0xe0a46b5ea4c6e6e1349c0c0e62050410054f9f27'
     },
     development: {
       network_id: '*',
       host: 'localhost',
-      port: 8545,
-      gas:   2900000
+      port: 8545
 
     }
   },

@@ -11,7 +11,7 @@ let QTG
 // accounts[5] = WALLET_ACCOUNT
 contract('QuantumGoldToken', function (accounts) {
   beforeEach(async () => {
-    QTG = await QuantumGoldTokenAbstraction.new(0, 'Quantum Gold Token', 18, 'QTG', accounts[5], {from: accounts[0]})
+    QTG = await QuantumGoldTokenAbstraction.new(accounts[5], {from: accounts[0]})
   })
 
   it('creation: should create an initial balance of 0 for the creator', async () => {
@@ -36,13 +36,13 @@ contract('QuantumGoldToken', function (accounts) {
     // assert.strictEqual(tokensPerKEther.toNumber(), 2000000000000000)
   })
 
-  it('creation: should succeed in creating over 2^256 - 1 (max) tokens', async () => {
-    // 2^256 - 1
-    let HST2 = await QuantumGoldTokenAbstraction.new('115792089237316195423570985008687907853269984665640564039457584007913129639935', 'Simon Bucks', 1, 'SBX', accounts[5], {from: accounts[0]})
-    const totalSupply = await HST2.totalSupply()
-    const match = totalSupply.equals('1.15792089237316195423570985008687907853269984665640564039457584007913129639935e+77')
-    assert(match, 'result is not correct')
-  })
+  // it('creation: should succeed in creating over 2^256 - 1 (max) tokens', async () => {
+  //   // 2^256 - 1
+  //   let HST2 = await QuantumGoldTokenAbstraction.new('115792089237316195423570985008687907853269984665640564039457584007913129639935', 'Simon Bucks', 1, 'SBX', accounts[5], {from: accounts[0]})
+  //   const totalSupply = await HST2.totalSupply()
+  //   const match = totalSupply.equals('1.15792089237316195423570985008687907853269984665640564039457584007913129639935e+77')
+  //   assert(match, 'result is not correct')
+  // })
 
   // TRANSERS
   // normal transfers without approvals
@@ -85,7 +85,7 @@ contract('QuantumGoldToken', function (accounts) {
     const allowance = await QTG.allowance.call(accounts[0], accounts[1])
     assert.strictEqual(allowance.toNumber(), 100)
   })
-  //
+
   it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient. It should succeed.', async () => {
     let SRS = await SampleRecipientSuccess.new({from: accounts[0]})
     await QTG.approveAndCall(SRS.address, 100, '0x42', {from: accounts[0]})
@@ -95,108 +95,113 @@ contract('QuantumGoldToken', function (accounts) {
     const value = await SRS.value.call()
     assert.strictEqual(value.toNumber(), 100)
   })
-  //
+
   it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient and throw.', async () => {
     let SRS = await SampleRecipientThrow.new({from: accounts[0]})
     return expectThrow(QTG.approveAndCall.call(SRS.address, 100, '0x42', {from: accounts[0]}))
   })
-  //
-  // // bit overkill. But is for testing a bug
-  // it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', async () => {
-  //   const balance0 = await QTG.balanceOf.call(accounts[0])
-  //   assert.strictEqual(balance0.toNumber(), 10000)
-  //
-  //   await QTG.approve(accounts[1], 100, {from: accounts[0]}) // 100
-  //   const balance2 = await QTG.balanceOf.call(accounts[2])
-  //   assert.strictEqual(balance2.toNumber(), 0, 'balance2 not correct')
-  //
-  //   QTG.transferFrom.call(accounts[0], accounts[2], 20, {from: accounts[1]})
-  //   await QTG.allowance.call(accounts[0], accounts[1])
-  //   await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]}) // -20
-  //   const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance01.toNumber(), 80) // =80
-  //
-  //   const balance22 = await QTG.balanceOf.call(accounts[2])
-  //   assert.strictEqual(balance22.toNumber(), 20)
-  //
-  //   const balance02 = await QTG.balanceOf.call(accounts[0])
-  //   assert.strictEqual(balance02.toNumber(), 9980)
-  // })
+  
+  // bit overkill. But is for testing a bug
+  it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', async () => {
+    await QTG.addPrecommitment(accounts[0], 10000)
+    const balance0 = await QTG.balanceOf.call(accounts[0])
+    assert.strictEqual(balance0.toNumber(), 10000)
 
-  // // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
-  // it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', async () => {
-  //   await QTG.approve(accounts[1], 100, {from: accounts[0]})
-  //   const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance01.toNumber(), 100)
+    await QTG.approve(accounts[1], 100, {from: accounts[0]}) // 100
+    const balance2 = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(balance2.toNumber(), 0, 'balance2 not correct')
+
+    QTG.transferFrom.call(accounts[0], accounts[2], 20, {from: accounts[1]})
+    await QTG.allowance.call(accounts[0], accounts[1])
+    await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]}) // -20
+    const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance01.toNumber(), 80) // =80
+
+    const balance22 = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(balance22.toNumber(), 20)
+
+    const balance02 = await QTG.balanceOf.call(accounts[0])
+    assert.strictEqual(balance02.toNumber(), 9980)
+  })
+
+  // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
+  it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', async () => {
+    await QTG.addPrecommitment(accounts[0], 10000)
+    await QTG.approve(accounts[1], 100, {from: accounts[0]})
+    const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance01.toNumber(), 100)
+
+    await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
+    const allowance012 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance012.toNumber(), 80)
+
+    const balance2 = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(balance2.toNumber(), 20)
+
+    const balance0 = await QTG.balanceOf.call(accounts[0])
+    assert.strictEqual(balance0.toNumber(), 9980)
+
+    // FIRST tx done.
+    // onto next.
+    await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
+    const allowance013 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance013.toNumber(), 60)
+
+    const balance22 = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(balance22.toNumber(), 40)
+
+    const balance02 = await QTG.balanceOf.call(accounts[0])
+    assert.strictEqual(balance02.toNumber(), 9960)
+  })
   //
-  //   await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
-  //   const allowance012 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance012.toNumber(), 80)
-  //
-  //   const balance2 = await QTG.balanceOf.call(accounts[2])
-  //   assert.strictEqual(balance2.toNumber(), 20)
-  //
-  //   const balance0 = await QTG.balanceOf.call(accounts[0])
-  //   assert.strictEqual(balance0.toNumber(), 9980)
-  //
-  //   // FIRST tx done.
-  //   // onto next.
-  //   await QTG.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
-  //   const allowance013 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance013.toNumber(), 60)
-  //
-  //   const balance22 = await QTG.balanceOf.call(accounts[2])
-  //   assert.strictEqual(balance22.toNumber(), 40)
-  //
-  //   const balance02 = await QTG.balanceOf.call(accounts[0])
-  //   assert.strictEqual(balance02.toNumber(), 9960)
-  // })
-  //
-  // // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
-  // it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
-  //   await QTG.approve(accounts[1], 100, {from: accounts[0]})
-  //   const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance01.toNumber(), 100)
-  //
-  //   await QTG.transferFrom(accounts[0], accounts[2], 50, {from: accounts[1]})
-  //   const allowance012 = await QTG.allowance.call(accounts[0], accounts[1])
-  //   assert.strictEqual(allowance012.toNumber(), 50)
-  //
-  //   const balance2 = await QTG.balanceOf.call(accounts[2])
-  //   assert.strictEqual(balance2.toNumber(), 50)
-  //
-  //   const balance0 = await QTG.balanceOf.call(accounts[0])
-  //   assert.strictEqual(balance0.toNumber(), 9950)
-  //
-  //   // FIRST tx done.
-  //   // onto next.
-  //   await expectThrow(QTG.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]}))
-  // })
-  //
+  // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
+  it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
+    await QTG.addPrecommitment(accounts[0], 10000)
+    await QTG.approve(accounts[1], 100, {from: accounts[0]})
+    const allowance01 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance01.toNumber(), 100)
+
+    await QTG.transferFrom(accounts[0], accounts[2], 50, {from: accounts[1]})
+    const allowance012 = await QTG.allowance.call(accounts[0], accounts[1])
+    assert.strictEqual(allowance012.toNumber(), 50)
+
+    const balance2 = await QTG.balanceOf.call(accounts[2])
+    assert.strictEqual(balance2.toNumber(), 50)
+
+    const balance0 = await QTG.balanceOf.call(accounts[0])
+    assert.strictEqual(balance0.toNumber(), 9950)
+
+    // FIRST tx done.
+    // onto next.
+    await expectThrow(QTG.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]}))
+  })
+
   it('approvals: attempt withdrawal from account with no allowance (should fail)', function () {
     return expectThrow(QTG.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]}))
   })
-  //
-  // it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', async () => {
-  //   QTG.approve(accounts[1], 100, {from: accounts[0]})
-  //   QTG.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
-  //   QTG.approve(accounts[1], 0, {from: accounts[0]})
-  //   await expectThrow(QTG.transferFrom.call(accounts[0], accounts[2], 10, {from: accounts[1]}))
-  // })
-  //
+
+  it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', async () => {
+    await QTG.addPrecommitment(accounts[0], 10000)
+    QTG.approve(accounts[1], 100, {from: accounts[0]})
+    QTG.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
+    QTG.approve(accounts[1], 0, {from: accounts[0]})
+    await expectThrow(QTG.transferFrom.call(accounts[0], accounts[2], 10, {from: accounts[1]}))
+  })
+
   it('approvals: approve max (2^256 - 1)', async () => {
     await QTG.approve(accounts[1], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[0]})
     const allowance = await QTG.allowance(accounts[0], accounts[1])
     assert(allowance.equals('1.15792089237316195423570985008687907853269984665640564039457584007913129639935e+77'))
   })
 
-  // it('events: should fire Transfer event properly', async () => {
-  //   const res = await QTG.transfer(accounts[1], '2666', {from: accounts[0]})
-  //   const transferLog = res.logs.find(element => element.event.match('Transfer'))
-  //   assert.strictEqual(transferLog.args._from, accounts[0])
-  //   assert.strictEqual(transferLog.args._to, accounts[1])
-  //   assert.strictEqual(transferLog.args._value.toString(), '2666')
-  // })
+  it('events: should fire Transfer event properly', async () => {
+    await QTG.addPrecommitment(accounts[0], 10000)
+    const res = await QTG.transfer(accounts[1], '2666', {from: accounts[0]})
+    const transferLog = res.logs.find(element => element.event.match('Transfer'))
+    assert.strictEqual(transferLog.args._from, accounts[0])
+    assert.strictEqual(transferLog.args._to, accounts[1])
+    assert.strictEqual(transferLog.args._value.toString(), '2666')
+  })
 
   it('events: should fire Transfer event normally on a zero transfer', async () => {
     const res = await QTG.transfer(accounts[1], '0', {from: accounts[0]})
@@ -363,6 +368,18 @@ contract('QuantumGoldToken', function (accounts) {
     await QTG.setTokensPerKEther(123456, {from: accounts[3]})
     const tokensPerKEther = await QTG.tokensPerKEther.call()
     assert.strictEqual(tokensPerKEther.toNumber(), 123456)
+  })
+
+  it('setWallet: should send to new wallet', async() => {
+    await web3.eth.sendTransaction({from: accounts[3], to: QTG.address, value: web3.toWei('0.002', 'Ether')})
+    const balanceBefore = await QTG.balanceOf.call(accounts[3])
+    assert.strictEqual(balanceBefore.toNumber(), 1e18)
+
+    await QTG.setWallet(accounts[4], {from: accounts[0]})
+
+    await web3.eth.sendTransaction({from: accounts[4], to: QTG.address, value: web3.toWei('0.004', 'Ether')})
+    const balanceAfter = await QTG.balanceOf.call(accounts[4])
+    assert.strictEqual(balanceAfter.toNumber(), 2e18)
   })
 
 
