@@ -18,8 +18,6 @@ import "./Owned.sol";
 
 pragma solidity ^0.4.11;
 
-//
-
 contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     using SafeMath for uint;
 
