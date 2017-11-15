@@ -53,7 +53,6 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     //
     // Regular Price:
     // tokensPerEther  = 500
-    // tokensPerKEther = 500
     // tokensPerKEther = 500,000 rounded to an uint, six significant figures
     //
     // *All the ETH and QTG should be call with (integer value + Decimal factor),
@@ -225,7 +224,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
 
     modifier canTransfer(address _from) {
       // Cannot transfer before crowdsale ends
-      //require(finalised);
+      require(finalised);
       // Cannot transfer if it is locked 1Y
       require(!isLocked1Y[_from]);
       // Cannot transfer if it is locked 2Y
@@ -247,7 +246,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     function transferFrom(address _from, address _to, uint _amount) canTransfer(_from)
         returns (bool success)
-    {
+    {   
         // Standard transferFrom
         return super.transferFrom(_from, _to, _amount);
     }

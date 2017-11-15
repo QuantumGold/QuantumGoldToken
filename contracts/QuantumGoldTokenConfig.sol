@@ -33,11 +33,11 @@ contract QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     // Tranche 1 token sale start date and end date
     // Do not use the `now` function here
-    // Start - Thursday, 01-Oct-17 13:00:00 UTC / 1pm GMT 22 Oct 2017
-    // End - Saturday, 01-Nov-17 13:00:00 UTC / 1pm GMT 22 Nov 2017
+    // Start - Nov. 30, 2017 @ 12:00 am (UTC)
+    // End - Dec. 30, 2017 @ 12:00 am (UTC
     // ------------------------------------------------------------------------
-    uint public constant START_DATE = 1504224000;
-    uint public constant END_DATE = 1509494400;
+    uint public constant START_DATE = 1512000000;
+    uint public constant END_DATE = 1514592000;
 
     // ------------------------------------------------------------------------
     // 1 year abd 2 year dates for locked tokens
