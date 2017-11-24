@@ -2,6 +2,7 @@ const expectThrow = require('./utils').expectThrow
 const QuantumGoldTokenAbstraction = artifacts.require('QuantumGoldToken')
 const SampleRecipientSuccess = artifacts.require('SampleRecipientSuccess')
 const SampleRecipientThrow = artifacts.require('SampleRecipientThrow')
+
 let QTG
 
 // accounts[0] = Contract creator
@@ -9,6 +10,7 @@ let QTG
 // accounts[3] = Investors
 // accounts[4] = Public Contributor
 // accounts[5] = WALLET_ACCOUNT
+
 contract('QuantumGoldToken', function (accounts) {
   beforeEach(async () => {
     QTG = await QuantumGoldTokenAbstraction.new(accounts[5], {from: accounts[0]})

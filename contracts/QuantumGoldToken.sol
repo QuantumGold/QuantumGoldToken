@@ -30,13 +30,14 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     Some wallets/interfaces might not even bother to look at this information.
     */
     string public name = _NAME;                  //fancy name: eg Simon Bucks
-    uint8 public decimals = _DECIMALS;                                 //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
-    string public symbol = _SYMBOL;                               //An identifier: eg SBX
+    uint8 public decimals = _DECIMALS;           //How many decimals to show. ie. There could 1000 base units with 3 decimals. Meaning 0.980 SBX = 980 base units. It's like comparing 1 wei to 1 ether.
+    string public symbol = _SYMBOL;              //An identifier: eg SBX
     address public wallet;
 
     uint256 public totalSupply = 0;
-    string public version = 'H0.1';                             //human 0.1 standard. Just an arbitrary versioning scheme.
+    string public version = 'H0.1';              //human 0.1 standard. Just an arbitrary versioning scheme.
     bool public finalised = false;
+    bool public started = false;
 
     // ------------------------------------------------------------------------
     // Number of tokens per 1,000 ETH
@@ -65,6 +66,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     mapping(address => bool) public isLocked1Y;
     mapping(address => bool) public isLocked2Y;
+    mapping(address => bool) public isLockedHalfYear;
 
     function QuantumGoldToken(
         address _wallet
@@ -101,10 +103,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
         require(!finalised);
 
         // No contributions before the start of the crowdsale
-        require(now >= START_DATE);
-        // No contributions after the end of the crowdsale
-        require(now <= END_DATE);
-
+        require(started);
         // No contributions below the minimum (can be 0 ETH)
         require(msg.value >= CONTRIBUTIONS_MIN);
         // No contributions above a maximum (if maximum is set to non-0)
@@ -142,8 +141,6 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // this contract and the total supply
     // ------------------------------------------------------------------------
     function finalise() onlyOwner {
-        // Can only finalise if raised > soft cap or after the end date
-        //require(totalSupply >= TOKENS_SOFT_CAP || now > END_DATE);
 
         // Can only finalise once
         require(!finalised);
@@ -167,13 +164,30 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     function addPrecommitment(address participant, uint balance) onlyOwner {
         require(balance > 0);
+        // Check if the hard cap will be exceeded
+        require(totalSupply + balance <= TOKENS_HARD_CAP);
+
         balances[participant] = balances[participant].add(balance);
         totalSupply = totalSupply.add(balance);
         Transfer(0x0, participant, balance);
     }
 
+    function addPrecommitmentHalfYearLocked(address participant, uint balance) onlyOwner {
+        require(balance > 0);
+        // Check if the hard cap will be exceeded
+        require(totalSupply + balance <= TOKENS_HARD_CAP);
+
+        balances[participant] = balances[participant].add(balance);
+        totalSupply = totalSupply.add(balance);
+        isLockedHalfYear[participant] = true;
+        Transfer(0x0, participant, balance);
+    }
+
     function addPrecommitment1YLocked(address participant, uint balance) onlyOwner {
         require(balance > 0);
+        // Check if the hard cap will be exceeded
+        require(totalSupply + balance <= TOKENS_HARD_CAP);
+
         balances[participant] = balances[participant].add(balance);
         totalSupply = totalSupply.add(balance);
         isLocked1Y[participant] = true;
@@ -182,10 +196,21 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
 
     function addPrecommitment2YLocked(address participant, uint balance) onlyOwner {
         require(balance > 0);
+        // Check if the hard cap will be exceeded
+        require(totalSupply + balance <= TOKENS_HARD_CAP);
+
         balances[participant] = balances[participant].add(balance);
         totalSupply = totalSupply.add(balance);
         isLocked2Y[participant] = true;
         Transfer(0x0, participant, balance);
+    }
+
+    // ------------------------------------------------------------------------
+    // An account can unlock their Half Year locked tokens Half Year after token launch date
+    // ------------------------------------------------------------------------
+    function unlockHalfYear(address participant) {
+        require(now >= LOCKED_1Y_DATE);
+        isLockedHalfYear[participant] = false;
     }
 
     // ------------------------------------------------------------------------
@@ -222,14 +247,22 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     }
     event WalletUpdated(address newWallet);
 
+    function setTokenSaleStatus(bool status) onlyOwner {
+        started = status;
+        WalletUpdated(wallet);
+    }
+    event TokenSaleStatusUpdated(bool started);
+
     modifier canTransfer(address _from) {
       // Cannot transfer before crowdsale ends
       require(finalised);
       // Cannot transfer if it is locked 1Y
+      require(!isLockedHalfYear[_from]);
+      // Cannot transfer if it is locked 1Y
       require(!isLocked1Y[_from]);
       // Cannot transfer if it is locked 2Y
       require(!isLocked2Y[_from]);
-       _;
+      _;
     }
     // ------------------------------------------------------------------------
     // Transfer the balance from owner's account to another account
@@ -246,7 +279,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // ------------------------------------------------------------------------
     function transferFrom(address _from, address _to, uint _amount) canTransfer(_from)
         returns (bool success)
-    {   
+    {
         // Standard transferFrom
         return super.transferFrom(_from, _to, _amount);
     }

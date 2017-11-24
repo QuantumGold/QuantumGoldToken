@@ -51,12 +51,12 @@ contract QuantumGoldTokenFactory {
       }
     }
 
-    function createQuantumGoldToken(uint256 _initialAmount, string _name, uint8 _decimals, string _symbol, address _wallet) returns (address) {
+    /*function createQuantumGoldToken(uint256 _initialAmount, string _name, uint8 _decimals, string _symbol, address _wallet) returns (address) {
 
         QuantumGoldToken newToken = (new QuantumGoldToken(_initialAmount, _name, _decimals, _symbol, _wallet));
         created[msg.sender].push(address(newToken));
         isQuantumGoldToken[address(newToken)] = true;
         newToken.transfer(msg.sender, _initialAmount); //the factory will own the created tokens. You must transfer them.
         return address(newToken);
-    }
+    }*/
 }
