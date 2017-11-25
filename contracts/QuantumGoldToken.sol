@@ -210,7 +210,7 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     // An account can unlock their Half Year locked tokens Half Year after token launch date
     // ------------------------------------------------------------------------
     function unlockHalfYear(address participant) {
-        require(now >= LOCKED_1Y_DATE);
+        require(now >= LOCKED_HALFYEAR_DATE);
         isLockedHalfYear[participant] = false;
     }
 

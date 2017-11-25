@@ -43,6 +43,7 @@ contract QuantumGoldTokenConfig {
     // 1 year abd 2 year dates for locked tokens
     // Do not use the `now` function here
     // ------------------------------------------------------------------------
+    uint public constant LOCKED_HALFYEAR_DATE = START_DATE + 182 days;
     uint public constant LOCKED_1Y_DATE = START_DATE + 365 days;
     uint public constant LOCKED_2Y_DATE = START_DATE + 2 * 365 days;
 
