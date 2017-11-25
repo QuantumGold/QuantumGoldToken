@@ -1,7 +1,7 @@
 const expectThrow = require('./utils').expectThrow
 const QuantumGoldTokenAbstraction = artifacts.require('QuantumGoldToken')
-const SampleRecipientSuccess = artifacts.require('SampleRecipientSuccess')
-const SampleRecipientThrow = artifacts.require('SampleRecipientThrow')
+// const SampleRecipientSuccess = artifacts.require('SampleRecipientSuccess')
+// const SampleRecipientThrow = artifacts.require('SampleRecipientThrow')
 
 let QTG
 
@@ -88,20 +88,20 @@ contract('QuantumGoldToken', function (accounts) {
     assert.strictEqual(allowance.toNumber(), 100)
   })
 
-  it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient. It should succeed.', async () => {
-    let SRS = await SampleRecipientSuccess.new({from: accounts[0]})
-    await QTG.approveAndCall(SRS.address, 100, '0x42', {from: accounts[0]})
-    const allowance = await QTG.allowance.call(accounts[0], SRS.address)
-    assert.strictEqual(allowance.toNumber(), 100)
+  // it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient. It should succeed.', async () => {
+  //   let SRS = await SampleRecipientSuccess.new({from: accounts[0]})
+  //   await QTG.approveAndCall(SRS.address, 100, '0x42', {from: accounts[0]})
+  //   const allowance = await QTG.allowance.call(accounts[0], SRS.address)
+  //   assert.strictEqual(allowance.toNumber(), 100)
+  //
+  //   const value = await SRS.value.call()
+  //   assert.strictEqual(value.toNumber(), 100)
+  // })
 
-    const value = await SRS.value.call()
-    assert.strictEqual(value.toNumber(), 100)
-  })
-
-  it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient and throw.', async () => {
-    let SRS = await SampleRecipientThrow.new({from: accounts[0]})
-    return expectThrow(QTG.approveAndCall.call(SRS.address, 100, '0x42', {from: accounts[0]}))
-  })
+  // it('approvals: msg.sender should approve 100 to SampleRecipient and then NOTIFY SampleRecipient and throw.', async () => {
+  //   let SRS = await SampleRecipientThrow.new({from: accounts[0]})
+  //   return expectThrow(QTG.approveAndCall.call(SRS.address, 100, '0x42', {from: accounts[0]}))
+  // })
 
   // bit overkill. But is for testing a bug
   it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', async () => {

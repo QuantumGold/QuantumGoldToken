@@ -62,11 +62,12 @@ contract QuantumGoldToken is StandardToken, Owned, QuantumGoldTokenConfig {
     uint public tokensPerKEther = 500000;
 
     // ------------------------------------------------------------------------
-    // Founders reward will be locked for 1 year and 2 year
+    // Founders reward will be locked for half year, 1 year and 2 year
     // ------------------------------------------------------------------------
+    mapping(address => bool) public isLockedHalfYear;
     mapping(address => bool) public isLocked1Y;
     mapping(address => bool) public isLocked2Y;
-    mapping(address => bool) public isLockedHalfYear;
+
 
     function QuantumGoldToken(
         address _wallet
